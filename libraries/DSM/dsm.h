@@ -16,7 +16,11 @@ enum DSM_CMD {							/* DSM bind states */
 	DSM_CMD_BIND_REINIT_UART
 };
 
-bool dsm_decode(uint64_t frame_time, const uint8_t dsm_frame[16],
+bool
+dsm_decode_channel(uint16_t raw, unsigned shift, unsigned *channel, unsigned *value);
+
+bool
+dsm_decode(uint64_t frame_time, const uint8_t dsm_frame[16],
                 uint16_t *values, 
                 uint16_t *num_values, 
                 uint16_t max_values);

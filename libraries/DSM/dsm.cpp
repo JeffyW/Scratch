@@ -85,7 +85,7 @@ static unsigned dsm_channel_shift;			/**< Channel resolution, 0=unknown, 1=10 bi
 * @param[out] value pointer to returned channel value
 * @return true=raw value successfully decoded
 */
-static bool
+bool
 dsm_decode_channel(uint16_t raw, unsigned shift, unsigned *channel, unsigned *value)
 {
 
@@ -93,6 +93,11 @@ dsm_decode_channel(uint16_t raw, unsigned shift, unsigned *channel, unsigned *va
 		return false;
 
 	*channel = (raw >> shift) & 0xf;
+
+	//if (*channel > 18)
+	//{
+	//	*channel &= 0xf;
+	//}
 
 	uint16_t data_mask = (1 << shift) - 1;
 	*value = raw & data_mask;
@@ -133,10 +138,10 @@ dsm_guess_format(bool reset, const uint8_t dsm_frame[DSM_FRAME_SIZE])
 	uint8_t bindType = dsm_frame[1];
 
 	/* The first two bytes are some form of a header, but not channel information, thus starting at 1. */
-	for (unsigned i = 0; i < DSM_FRAME_CHANNELS; i++) {
+	for (unsigned i = 1; i <= DSM_FRAME_CHANNELS; i++) {
 
 		/* scan the channels in the current dsm_frame in both 10- and 11-bit mode */
-		const uint8_t *dp = &dsm_frame[2 + (2 * i)];
+		const uint8_t *dp = &dsm_frame[(2 * i)];
 		uint16_t raw = (dp[0] << 8) | dp[1];
 		unsigned channel, value;
 
@@ -242,9 +247,9 @@ dsm_decode(uint64_t frame_time, const uint8_t dsm_frame[DSM_FRAME_SIZE], uint16_
 	* seven channels are being transmitted.
 	*/
 
-	for (unsigned i = 0; i < DSM_FRAME_CHANNELS; i++) {
+	for (unsigned i = 1; i <= DSM_FRAME_SIZE / 2; i++) {
 
-		const uint8_t *dp = &dsm_frame[2 + (2 * i)];
+		const uint8_t *dp = &dsm_frame[(2 * i)];
 		uint16_t raw = (dp[0] << 8) | dp[1];
 		unsigned channel, value;
 
@@ -277,7 +282,7 @@ dsm_decode(uint64_t frame_time, const uint8_t dsm_frame[DSM_FRAME_SIZE], uint16_
 		*/
 
 		/* scaled integer for decent accuracy while staying efficient */
-		value = ((((int)value - 1024) * 1000) / 1700) + 1500;
+		//value = ((((int)value - 1024) * 1000) / 1700) + 1500;
 
 		/*
 		* Store the decoded channel into the R/C input buffer, taking into
@@ -286,21 +291,21 @@ dsm_decode(uint64_t frame_time, const uint8_t dsm_frame[DSM_FRAME_SIZE], uint16_
 		* Specifically, the first four channels in rc_channel_data are roll, pitch, thrust, yaw,
 		* but the first four channels from the DSM receiver are thrust, roll, pitch, yaw.
 		*/
-		switch (channel) {
-		case 0:
-			channel = 2;
-			break;
+		//switch (channel) {
+		//case 0:
+		//	channel = 2;
+		//	break;
 
-		case 1:
-			channel = 0;
-			break;
+		//case 1:
+		//	channel = 0;
+		//	break;
 
-		case 2:
-			channel = 1;
+		//case 2:
+		//	channel = 1;
 
-		default:
-			break;
-		}
+		//default:
+		//	break;
+		//}
 
 		values[channel] = value;
 	}
