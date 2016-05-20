@@ -87,14 +87,14 @@ void loop()
 		//{
 		//	uint16_t raw = (dsm_frame[2 * i] << 8) | dsm_frame[2 * i + 1];
 
-		//	uint16_t channel = raw >> 11;
+		//	uint16_t channel = (raw >> 11) & 0xf;
 
 		//	uint16_t value = raw << 5;
 		//	value = value >> 5;
 
-		//	if (channel < 9)
+		//	if (channel < 16)
 		//	{
-		//		values[channel] = value - 342;
+		//		values[channel] = value;
 		//	}
 		//	else
 		//	{
