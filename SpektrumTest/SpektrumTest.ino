@@ -46,29 +46,21 @@ namespace AP_HAL {
 
 }
 
-#define pin 48
-
 void setup()
 {
 	Serial.begin(115200);
 
 	//pinMode(pin, OUTPUT);
-	//digitalWrite(pin, LOW);
-	Serial3.begin(115200); //Uses Serial3 for input as default
-	//while (Serial3.available() > 0)
-	//{
-	//	debug("Flushing");
-	//	Serial3.read();
-	//}
-	//delay(1 * 1000);
 	//digitalWrite(pin, HIGH);
+	Serial3.begin(115200); //Uses Serial3 for input as default
 }
 
+static uint16_t vals[16];
 
 void loop()
 {
-	static uint16_t numChannels;
-	static uint16_t values[16];
+	uint16_t *values = vals;
+	uint16_t numChannels = 16;
 
 	while (Serial3.available() >= 16)
 	{
@@ -79,44 +71,15 @@ void loop()
 			dsm_frame[i] = Serial3.read();
 		}
 
-		//debug("DSM dsm_frame %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x",
-		//	dsm_frame[0], dsm_frame[1], dsm_frame[2], dsm_frame[3], dsm_frame[4], dsm_frame[5], dsm_frame[6], dsm_frame[7],
-		//	dsm_frame[8], dsm_frame[9], dsm_frame[10], dsm_frame[11], dsm_frame[12], dsm_frame[13], dsm_frame[14], dsm_frame[15]);
-
-		//for (i = 1; i < 8; i++)
-		//{
-		//	uint16_t raw = (dsm_frame[2 * i] << 8) | dsm_frame[2 * i + 1];
-
-		//	uint16_t channel = (raw >> 11) & 0xf;
-
-		//	uint16_t value = raw << 5;
-		//	value = value >> 5;
-
-		//	if (channel < 16)
-		//	{
-		//		values[channel] = value;
-		//	}
-		//	else
-		//	{
-		//		//error, ignore ;)
-		//	}
-		//}
-
-		for (i = 1; i < 8; i++)
-		{
-			unsigned channel;
-			unsigned value;
-			uint16_t raw = (dsm_frame[2 * i] << 8) | dsm_frame[2 * i + 1];
-			dsm_decode_channel(raw, 11, &channel, &value);
-			//debug("DSM: 0x%04x -> %d %d", raw, channel, value);
-			values[channel] = value;
+		uint16_t num_values = 0;
+		if (!dsm_decode(AP_HAL::micros64(), dsm_frame, values, &num_values, numChannels)) {
+			debug("WTF");
+			//debug("DSM dsm_frame %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x",
+			//	dsm_frame[0], dsm_frame[1], dsm_frame[2], dsm_frame[3], dsm_frame[4], dsm_frame[5], dsm_frame[6], dsm_frame[7],
+			//	dsm_frame[8], dsm_frame[9], dsm_frame[10], dsm_frame[11], dsm_frame[12], dsm_frame[13], dsm_frame[14], dsm_frame[15]);
 		}
-
-		//uint16_t num_values = 0;
-		//if (!dsm_decode(AP_HAL::micros64(), dsm_frame, values, &num_values, numChannels)) {
-		//	debug("WTF");
-		//}
 
 		debug("%u	%u	%u	%u	%u	%u	%u	%u	%u", values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8]);
 	}
 }
+

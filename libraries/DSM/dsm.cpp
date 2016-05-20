@@ -46,9 +46,9 @@ modified for use in AP_HAL_* by Andrew Tridgell
 #include "AP_Common.h"
 #endif
 
-
 #include "dsm.h"
 
+#define DSM_FRAME_SIZE		16		/**< DSM frame size in bytes*/
 #define DSM_FRAME_CHANNELS	7		/**< Max supported DSM channels. (DSM_FRAME_SIZE/2)-1*/
 
 static uint64_t dsm_last_frame_time;		/**< Timestamp for start of last dsm frame */
@@ -85,7 +85,7 @@ static unsigned dsm_channel_shift;			/**< Channel resolution, 0=unknown, 1=10 bi
 * @param[out] value pointer to returned channel value
 * @return true=raw value successfully decoded
 */
-bool
+static bool
 dsm_decode_channel(uint16_t raw, unsigned shift, unsigned *channel, unsigned *value)
 {
 
@@ -107,7 +107,7 @@ dsm_decode_channel(uint16_t raw, unsigned shift, unsigned *channel, unsigned *va
 *
 * @param[in] reset true=reset the 10/11 bit state to unknown
 */
-void
+static void
 dsm_guess_format(bool reset, const uint8_t dsm_frame[DSM_FRAME_SIZE])
 {
 	static uint32_t	cs10;
@@ -122,15 +122,6 @@ dsm_guess_format(bool reset, const uint8_t dsm_frame[DSM_FRAME_SIZE])
 		dsm_channel_shift = 0;
 		return;
 	}
-
-	// The preamble byte vary between Rx
-	// The first byte is number of errors and maxs out at FF
-	uint8_t errors = dsm_frame[0];
-
-	// The second byte is the bind type
-	// 01 == DSM2 1024/22ms
-	// A2 == DSMX 22ms
-	uint8_t bindType = dsm_frame[1];
 
 	/* The first two bytes are some form of a header, but not channel information, thus starting at 1. */
 	for (unsigned i = 0; i < DSM_FRAME_CHANNELS; i++) {
@@ -326,4 +317,3 @@ dsm_decode(uint64_t frame_time, const uint8_t dsm_frame[DSM_FRAME_SIZE], uint16_
 	*/
 	return true;
 }
-
