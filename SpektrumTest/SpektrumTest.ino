@@ -45,17 +45,21 @@ namespace AP_HAL {
 	}
 
 }
+#define rx 48
 
 void setup()
 {
 	Serial.begin(115200);
+	pinMode(48, OUTPUT);
 
-	//pinMode(pin, OUTPUT);
-	//digitalWrite(pin, HIGH);
+
+
+	digitalWrite(rx, HIGH);
 	Serial3.begin(115200); //Uses Serial3 for input as default
 }
 
 static uint16_t vals[16];
+
 
 void loop()
 {
