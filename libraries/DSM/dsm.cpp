@@ -48,7 +48,6 @@ modified for use in AP_HAL_* by Andrew Tridgell
 
 #include "dsm.h"
 
-#define DSM_FRAME_SIZE		16		/**< DSM frame size in bytes*/
 #define DSM_FRAME_CHANNELS	7		/**< Max supported DSM channels. (DSM_FRAME_SIZE/2)-1*/
 
 static uint64_t dsm_last_frame_time;		/**< Timestamp for start of last dsm frame */
@@ -107,7 +106,7 @@ dsm_decode_channel(uint16_t raw, unsigned shift, unsigned *channel, unsigned *va
 *
 * @param[in] reset true=reset the 10/11 bit state to unknown
 */
-static void
+void
 dsm_guess_format(bool reset, const uint8_t dsm_frame[DSM_FRAME_SIZE])
 {
 	static uint32_t	cs10;
