@@ -30,9 +30,6 @@
     <ClInclude Include="AP_Common\AP_Common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AP_HAL\RCInput.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="AP_HAL\AP_HAL_Namespace.h">
       <Filter>Header Files</Filter>
     </ClInclude>

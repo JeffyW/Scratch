@@ -47,6 +47,9 @@ modified for use in AP_HAL_* by Andrew Tridgell
 #endif
 
 #include "dsm.h"
+#include <wiring_digital.h>
+//#include <wiring_constants.h>
+//#include <wiring.h>
 
 #define DSM_FRAME_CHANNELS	7		/**< Max supported DSM channels. (DSM_FRAME_SIZE/2)-1*/
 
@@ -106,7 +109,7 @@ dsm_decode_channel(uint16_t raw, unsigned shift, unsigned *channel, unsigned *va
 *
 * @param[in] reset true=reset the 10/11 bit state to unknown
 */
-void
+static void
 dsm_guess_format(bool reset, const uint8_t dsm_frame[DSM_FRAME_SIZE])
 {
 	static uint32_t	cs10;
@@ -315,4 +318,87 @@ dsm_decode(uint64_t frame_time, const uint8_t dsm_frame[DSM_FRAME_SIZE], uint16_
 	* XXX Note that we may be in failsafe here; we need to work out how to detect that.
 	*/
 	return true;
+}
+
+
+//#define usleep(_s)	delayMicroseconds(_s)
+static void usleep(uint32_t usec){
+	/*
+	* Based on Paul Stoffregen's implementation
+	* for Teensy 3.0 (http://www.pjrc.com/)
+	*/
+	if (usec == 0) return;
+	uint32_t n = usec * (84000000 / 3000000);
+	asm volatile(
+		"L_%=_delayMicroseconds:"       "\n\t"
+		"subs   %0, #1"                 "\n\t"
+		"bne    L_%=_delayMicroseconds" "\n"
+		: "+r" (n) :
+		);
+}
+
+void DSM::bind(uint16_t cmd, int pulses)
+{
+#define SPEKTRUM_RX_AS_UART()		pinMode(hal->dsm_receiver_pin, /*INPUT*/ 0x0); hal->dsm_receiver->begin(115200) //stm32_configgpio(GPIO_USART1_RX)
+#define SPEKTRUM_RX_AS_GPIO()		pinMode(hal->dsm_receiver_pin, /*OUTPUT*/ 0x1) //stm32_configgpio(GPIO_USART1_RX_SPEKTRUM)
+#define SPEKTRUM_RX_HIGH(_s)		digitalWrite(hal->dsm_receiver_pin, (_s)) //stm32_gpiowrite(GPIO_USART1_RX_SPEKTRUM, (_s))
+#define POWER_SPEKTRUM(_s)			digitalWrite(hal->dsm_receiver_power_pin, (_s)) //stm32_gpiowrite(GPIO_SPEKTRUM_PWR_EN, (_s))
+
+	switch (cmd) {
+
+	case DSM_CMD_BIND_POWER_DOWN:
+
+		/*power down DSM satellite*/
+		POWER_SPEKTRUM(/*LOW*/ 0);
+		break;
+
+	case DSM_CMD_BIND_POWER_UP:
+
+		/*power up DSM satellite*/
+		POWER_SPEKTRUM(/*HIGH*/ 1);
+		uint8_t dsm_frame[DSM_FRAME_SIZE];
+		dsm_guess_format(true, dsm_frame);
+		break;
+
+	case DSM_CMD_BIND_SET_RX_OUT:
+
+		/*Set UART RX pin to active output mode*/
+		SPEKTRUM_RX_AS_GPIO();
+		break;
+
+	case DSM_CMD_BIND_SEND_PULSES:
+
+		/*Pulse RX pin a number of times*/
+		for (int i = 0; i < pulses; i++) {
+			usleep(120);
+			SPEKTRUM_RX_HIGH(/*LOW*/ 0);
+			usleep(120);
+			SPEKTRUM_RX_HIGH(/*HIGH*/ 1);
+		}
+
+		break;
+
+	case DSM_CMD_BIND_REINIT_UART:
+
+		/*Restore USART RX pin to RS232 receive mode*/
+		SPEKTRUM_RX_AS_UART();
+		break;
+
+	}
+}
+
+void DSM::bind(uint8_t pulses)
+{
+	bind(DSM_CMD_BIND_POWER_DOWN, 0);
+	usleep(500000);
+
+	bind(DSM_CMD_BIND_SET_RX_OUT, 0);
+
+	bind(DSM_CMD_BIND_POWER_UP, 0);
+	usleep(72000);
+
+	bind(DSM_CMD_BIND_SEND_PULSES, pulses);
+	usleep(50000);
+
+	bind(DSM_CMD_BIND_REINIT_UART, 0);
 }

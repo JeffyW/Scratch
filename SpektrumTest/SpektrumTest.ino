@@ -1,14 +1,5 @@
-/*
-Name:		SpektrumTest.ino
-Created:	5/11/2016 8:49:30 AM
-Author:	jeffy
-*/
-
 #include "dsm.h"
 #include <stdarg.h>
-#include <HardwareSerial.h>
-#include <chip.h>
-#include <RingBuffer.h>
 
 // Serial pin
 #define GPIO_USART1_RX_SPEKTRUM		15 //(GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|GPIO_OUTPUT_SET|GPIO_PORTA|GPIO_PIN10)
@@ -19,15 +10,9 @@ Pio *rxport = digitalPinToPort(GPIO_USART1_RX_SPEKTRUM);
 uint32_t rxbitmask = digitalPinToBitMask(GPIO_USART1_RX_SPEKTRUM);
 static uint16_t vals[16];
 unsigned long timex;
-#define usleep(_s)	delayMicroseconds(_s)
-#define dsm_udelay(arg) usleep(arg)
-#define POWER_SPEKTRUM(_s)		digitalWrite(GPIO_SPEKTRUM_PWR_EN, (_s)) //stm32_gpiowrite(GPIO_SPEKTRUM_PWR_EN, (_s))
-#define SPEKTRUM_RX_HIGH(_s)	digitalWrite(GPIO_USART1_RX_SPEKTRUM, (_s)) //stm32_gpiowrite(GPIO_USART1_RX_SPEKTRUM, (_s))
-#define SPEKTRUM_RX_AS_UART()		pinMode(GPIO_USART1_RX_SPEKTRUM, INPUT); Serial3.begin(115200) //stm32_configgpio(GPIO_USART1_RX)
-#define SPEKTRUM_RX_AS_GPIO()		pinMode(GPIO_USART1_RX_SPEKTRUM, OUTPUT) //stm32_configgpio(GPIO_USART1_RX_SPEKTRUM)
+//#define usleep(_s)	delayMicroseconds(_s)
 
-
-static void debug(char *fmt, ...){
+static void debug(const char *fmt, ...){
 	char buf[128]; // resulting string limited to 128 chars
 	va_list args;
 	va_start(args, fmt);
@@ -66,85 +51,20 @@ namespace AP_HAL {
 
 }
 
+static HAL::HAL hal = HAL::HAL(
+	&Serial,
+	&Serial3,
+	15,
+	48);
 
-enum DSM_CMD {							/* DSM bind states */
-	DSM_CMD_BIND_POWER_DOWN = 0,
-	DSM_CMD_BIND_POWER_UP,
-	DSM_CMD_BIND_SET_RX_OUT,
-	DSM_CMD_BIND_SEND_PULSES,
-	DSM_CMD_BIND_REINIT_UART
-};
-
-void
-dsm_bind(uint16_t cmd, int pulses)
-{
-	switch (cmd) {
-
-	case DSM_CMD_BIND_POWER_DOWN:
-
-		/*power down DSM satellite*/
-		POWER_SPEKTRUM(0);
-		break;
-
-	case DSM_CMD_BIND_POWER_UP:
-
-		/*power up DSM satellite*/
-		POWER_SPEKTRUM(1);
-		uint8_t dsm_frame[16];
-		dsm_guess_format(true, dsm_frame);
-		break;
-
-	case DSM_CMD_BIND_SET_RX_OUT:
-
-		/*Set UART RX pin to active output mode*/
-		SPEKTRUM_RX_AS_GPIO();
-		break;
-
-	case DSM_CMD_BIND_SEND_PULSES:
-
-		/*Pulse RX pin a number of times*/
-		for (int i = 0; i < pulses; i++) {
-			dsm_udelay(120);
-			SPEKTRUM_RX_HIGH(false);
-			dsm_udelay(120);
-			SPEKTRUM_RX_HIGH(true);
-		}
-
-		break;
-
-	case DSM_CMD_BIND_REINIT_UART:
-
-		/*Restore USART RX pin to RS232 receive mode*/
-		SPEKTRUM_RX_AS_UART();
-		break;
-
-	}
-}
-
-void bind()
-{
-	int arg = 5;
-
-	dsm_bind(DSM_CMD_BIND_POWER_DOWN, 0);
-	usleep(500000);
-
-	dsm_bind(DSM_CMD_BIND_SET_RX_OUT, 0);
-
-	dsm_bind(DSM_CMD_BIND_POWER_UP, 0);
-	usleep(72000);
-
-	dsm_bind(DSM_CMD_BIND_SEND_PULSES, arg);
-	usleep(50000);
-
-	dsm_bind(DSM_CMD_BIND_REINIT_UART, 0);
-}
+static DSM dsm = DSM(&hal);
 
 void setup()
 {
 	Serial.begin(115200);
 	pinMode(GPIO_SPEKTRUM_PWR_EN, OUTPUT);
 
-	bind();
+	dsm.bind(7);
 
 	digitalWrite(GPIO_SPEKTRUM_PWR_EN, HIGH);
 	Serial3.begin(115200); //Uses Serial3 for input as default
