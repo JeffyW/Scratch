@@ -33,9 +33,15 @@
     <ClInclude Include="AP_HAL\AP_HAL_Namespace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="HAL\HAL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DSM\dsm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HAL\HAL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
