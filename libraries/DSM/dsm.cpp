@@ -1,65 +1,25 @@
-// -*- tab-width: 8; Mode: C++; c-basic-offset: 8; indent-tabs-mode: -*- t -*-
-/*
-DSM decoder, based on src/modules/px4iofirmware/dsm.c from PX4Firmware
-modified for use in AP_HAL_* by Andrew Tridgell
-*/
-/****************************************************************************
-*
-*   Copyright (c) 2012-2014 PX4 Development Team. All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions
-* are met:
-*
-* 1. Redistributions of source code must retain the above copyright
-*    notice, this list of conditions and the following disclaimer.
-* 2. Redistributions in binary form must reproduce the above copyright
-*    notice, this list of conditions and the following disclaimer in
-*    the documentation and/or other materials provided with the
-*    distribution.
-* 3. Neither the name PX4 nor the names of its contributors may be
-*    used to endorse or promote products derived from this software
-*    without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-* COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-* BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-* OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-* AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-* ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.
-*
-****************************************************************************/
-
-#include <stdint.h>
-#include <stdbool.h>
-
-#ifdef VSMICRO
+#include <Arduino.h>
 #include <AP_Common/AP_Common.h>
-//#include "AP_Common/AP_Common.h"
-#else
-#include "AP_Common.h"
-#endif
-
-#include "dsm.h"
 #include <wiring_digital.h>
-//#include <wiring_constants.h>
-//#include <wiring.h>
+#include "dsm.h"
 
-#define DSM_FRAME_CHANNELS	7		/**< Max supported DSM channels. (DSM_FRAME_SIZE/2)-1*/
+#define DSM2_22ms_BIND_PULSES 3	/* DSM_BIND_START ioctl parameter, pulses required to start dsm2 pairing */
+#define DSM2_11ms_BIND_PULSES 3	/* DSM_BIND_START ioctl parameter, pulses required to start dsm2 pairing */
+#define DSMX_22ms_BIND_PULSES 7	/* DSM_BIND_START ioctl parameter, pulses required to start dsmx pairing */
+#define DSMX_11ms_BIND_PULSES 9	/* DSM_BIND_START ioctl parameter, pulses required to start 8 or more channel dsmx pairing */
+
+#define SPEKTRUM_RX_AS_UART()	pinMode(hal->dsm_receiver_pin, INPUT); hal->dsm_receiver->begin(115200) //stm32_configgpio(GPIO_USART1_RX)
+#define SPEKTRUM_RX_AS_GPIO()	pinMode(hal->dsm_receiver_pin, OUTPUT) //stm32_configgpio(GPIO_USART1_RX_SPEKTRUM)
+#define SPEKTRUM_RX_HIGH(_s)	digitalWrite(hal->dsm_receiver_pin, (_s)) //stm32_gpiowrite(GPIO_USART1_RX_SPEKTRUM, (_s))
+#define POWER_SPEKTRUM(_s)		digitalWrite(hal->dsm_receiver_power_pin, (_s)) //stm32_gpiowrite(GPIO_SPEKTRUM_PWR_EN, (_s))
 
 static uint64_t dsm_last_frame_time;		/**< Timestamp for start of last dsm frame */
 static unsigned dsm_channel_shift;			/**< Channel resolution, 0=unknown, 1=10 bit, 2=11 bit */
 
 #ifdef DEBUG
-# define debug(fmt, args...)	printf(fmt "\n", ##args)
 #else
-# define debug(fmt, args...)
+#define debug(fmt, args...)
+#define debug(fmt, args...) HAL::debug(fmt, ##args)
 #endif
 
 /**
@@ -87,8 +47,7 @@ static unsigned dsm_channel_shift;			/**< Channel resolution, 0=unknown, 1=10 bi
 * @param[out] value pointer to returned channel value
 * @return true=raw value successfully decoded
 */
-static bool
-dsm_decode_channel(uint16_t raw, unsigned shift, unsigned *channel, unsigned *value)
+static bool dsm_decode_channel(uint16_t raw, unsigned shift, unsigned *channel, unsigned *value)
 {
 
 	if (raw == 0xffff)
@@ -104,32 +63,32 @@ dsm_decode_channel(uint16_t raw, unsigned shift, unsigned *channel, unsigned *va
 	return true;
 }
 
+static uint32_t	cs10;
+static uint32_t	cs11;
+static unsigned samples;
+
+static void resetFormat()
+{
+	cs10 = 0;
+	cs11 = 0;
+	samples = 0;
+	dsm_channel_shift = 0;
+}
+
 /**
 * Attempt to guess if receiving 10 or 11 bit channel values
 *
 * @param[in] reset true=reset the 10/11 bit state to unknown
 */
-static void
-dsm_guess_format(bool reset, const uint8_t dsm_frame[DSM_FRAME_SIZE])
+static bool dsm_guess_format(const uint8_t dsm_frame[DSM_FRAME_SIZE])
 {
-	static uint32_t	cs10;
-	static uint32_t	cs11;
-	static unsigned samples;
-
-	/* reset the 10/11 bit sniffed channel masks */
-	if (reset) {
-		cs10 = 0;
-		cs11 = 0;
-		samples = 0;
-		dsm_channel_shift = 0;
-		return;
-	}
+	debug("Frame:	%02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x", dsm_frame[0], dsm_frame[1], dsm_frame[2], dsm_frame[3], dsm_frame[4], dsm_frame[5], dsm_frame[6], dsm_frame[7], dsm_frame[8], dsm_frame[9], dsm_frame[10], dsm_frame[11], dsm_frame[12], dsm_frame[13], dsm_frame[14], dsm_frame[15]);
 
 	/* The first two bytes are some form of a header, but not channel information, thus starting at 1. */
-	for (unsigned i = 0; i < DSM_FRAME_CHANNELS; i++) {
+	for (unsigned i = 2; i < DSM_FRAME_SIZE; i += 2) {
 
 		/* scan the channels in the current dsm_frame in both 10- and 11-bit mode */
-		const uint8_t *dp = &dsm_frame[2 + (2 * i)];
+		const uint8_t *dp = &dsm_frame[i];
 		uint16_t raw = (dp[0] << 8) | dp[1];
 		unsigned channel, value;
 
@@ -145,7 +104,7 @@ dsm_guess_format(bool reset, const uint8_t dsm_frame[DSM_FRAME_SIZE])
 
 	/* wait until we have seen plenty of frames - 5 should normally be enough */
 	if (samples++ < 5)
-		return;
+		return true;
 
 	/*
 	* Iterate the set of sensible sniffed channel sets and see whether
@@ -182,47 +141,52 @@ dsm_guess_format(bool reset, const uint8_t dsm_frame[DSM_FRAME_SIZE])
 	if ((votes11 == 1) && (votes10 == 0)) {
 		dsm_channel_shift = 11;
 		debug("DSM: 11-bit format");
-		return;
+		return true;
 	}
 
 	if ((votes10 == 1) && (votes11 == 0)) {
 		dsm_channel_shift = 10;
 		debug("DSM: 10-bit format");
-		return;
+		return true;
 	}
 
 	/* call ourselves to reset our state ... we have to try again */
 	debug("DSM: format detect fail, 10: 0x%08x %d 11: 0x%08x %d", cs10, votes10, cs11, votes11);
-	dsm_guess_format(true, dsm_frame);
+	resetFormat();
+	return false;
 }
 
 /**
 * Decode the entire dsm frame (all contained channels)
 *
 */
-bool
-dsm_decode(uint64_t frame_time, const uint8_t dsm_frame[DSM_FRAME_SIZE], uint16_t *values, uint16_t *num_values, uint16_t max_values)
+bool DSM::dsm_decode(const uint8_t dsm_frame[DSM_FRAME_SIZE], uint16_t *values, uint16_t *num_values, uint16_t max_values)
 {
-	/*
-	debug("DSM dsm_frame %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x",
-	dsm_frame[0], dsm_frame[1], dsm_frame[2], dsm_frame[3], dsm_frame[4], dsm_frame[5], dsm_frame[6], dsm_frame[7],
-	dsm_frame[8], dsm_frame[9], dsm_frame[10], dsm_frame[11], dsm_frame[12], dsm_frame[13], dsm_frame[14], dsm_frame[15]);
-	*/
+	uint64_t frame_time = HAL::micros64();
+
 	/*
 	* If we have lost signal for at least a second, reset the
 	* format guessing heuristic.
 	*/
 	if (((frame_time - dsm_last_frame_time) > 1000000) && (dsm_channel_shift != 0))
-		dsm_guess_format(true, dsm_frame);
+		resetFormat();
 
 	/* we have received something we think is a dsm_frame */
 	dsm_last_frame_time = frame_time;
 
 	/* if we don't know the dsm_frame format, update the guessing state machine */
-	if (dsm_channel_shift == 0) {
-		dsm_guess_format(false, dsm_frame);
+	if (dsm_channel_shift == 0)
+	{
+		if (!dsm_guess_format(dsm_frame))
+		{
+			// Failed to guess format, clear the buffer and start over.
+			// This is overkill, but the only way I can see to clear the buffer.
+			SPEKTRUM_RX_AS_UART();
+			return false;
+		}
 		return false;
 	}
+
 
 	/*
 	* The encoding of the first two bytes is uncertain, so we're
@@ -235,9 +199,10 @@ dsm_decode(uint64_t frame_time, const uint8_t dsm_frame[DSM_FRAME_SIZE], uint16_
 	* seven channels are being transmitted.
 	*/
 
-	for (unsigned i = 0; i < DSM_FRAME_CHANNELS; i++) {
+	for (unsigned i = 2; i < DSM_FRAME_SIZE; i += 2) {
 
-		const uint8_t *dp = &dsm_frame[2 + (2 * i)];
+		/* scan the channels in the current dsm_frame in both 10- and 11-bit mode */
+		const uint8_t *dp = &dsm_frame[i];
 		uint16_t raw = (dp[0] << 8) | dp[1];
 		unsigned channel, value;
 
@@ -320,85 +285,46 @@ dsm_decode(uint64_t frame_time, const uint8_t dsm_frame[DSM_FRAME_SIZE], uint16_
 	return true;
 }
 
-
-//#define usleep(_s)	delayMicroseconds(_s)
-static void usleep(uint32_t usec){
-	/*
-	* Based on Paul Stoffregen's implementation
-	* for Teensy 3.0 (http://www.pjrc.com/)
-	*/
-	if (usec == 0) return;
-	uint32_t n = usec * (84000000 / 3000000);
-	asm volatile(
-		"L_%=_delayMicroseconds:"       "\n\t"
-		"subs   %0, #1"                 "\n\t"
-		"bne    L_%=_delayMicroseconds" "\n"
-		: "+r" (n) :
-		);
-}
-
-void DSM::bind(uint16_t cmd, int pulses)
+void DSM::init(bool shouldBind)
 {
-#define SPEKTRUM_RX_AS_UART()		pinMode(hal->dsm_receiver_pin, /*INPUT*/ 0x0); hal->dsm_receiver->begin(115200) //stm32_configgpio(GPIO_USART1_RX)
-#define SPEKTRUM_RX_AS_GPIO()		pinMode(hal->dsm_receiver_pin, /*OUTPUT*/ 0x1) //stm32_configgpio(GPIO_USART1_RX_SPEKTRUM)
-#define SPEKTRUM_RX_HIGH(_s)		digitalWrite(hal->dsm_receiver_pin, (_s)) //stm32_gpiowrite(GPIO_USART1_RX_SPEKTRUM, (_s))
-#define POWER_SPEKTRUM(_s)			digitalWrite(hal->dsm_receiver_power_pin, (_s)) //stm32_gpiowrite(GPIO_SPEKTRUM_PWR_EN, (_s))
+	pinMode(hal->dsm_receiver_power_pin, 0x1);
 
-	switch (cmd) {
-
-	case DSM_CMD_BIND_POWER_DOWN:
-
-		/*power down DSM satellite*/
-		POWER_SPEKTRUM(/*LOW*/ 0);
-		break;
-
-	case DSM_CMD_BIND_POWER_UP:
-
-		/*power up DSM satellite*/
-		POWER_SPEKTRUM(/*HIGH*/ 1);
-		uint8_t dsm_frame[DSM_FRAME_SIZE];
-		dsm_guess_format(true, dsm_frame);
-		break;
-
-	case DSM_CMD_BIND_SET_RX_OUT:
-
-		/*Set UART RX pin to active output mode*/
-		SPEKTRUM_RX_AS_GPIO();
-		break;
-
-	case DSM_CMD_BIND_SEND_PULSES:
-
-		/*Pulse RX pin a number of times*/
-		for (int i = 0; i < pulses; i++) {
-			usleep(120);
-			SPEKTRUM_RX_HIGH(/*LOW*/ 0);
-			usleep(120);
-			SPEKTRUM_RX_HIGH(/*HIGH*/ 1);
-		}
-
-		break;
-
-	case DSM_CMD_BIND_REINIT_UART:
-
-		/*Restore USART RX pin to RS232 receive mode*/
-		SPEKTRUM_RX_AS_UART();
-		break;
-
+	if (shouldBind)
+	{
+		bind(DSMX_11ms_BIND_PULSES);
 	}
+	else
+	{
+		// Need to find a way to detect that we're in binding mode, then recycle the RX.
+		// But if we're not in binding mode, I don't want to lose the cycles.
+		//if (false)
+		//{
+		//	POWER_SPEKTRUM(/*LOW*/ 0);
+		//	HAL::usleep(50000);
+		//}
+	}
+
+	SPEKTRUM_RX_AS_UART();
+	POWER_SPEKTRUM(/*HIGH*/ 1);
 }
 
 void DSM::bind(uint8_t pulses)
 {
-	bind(DSM_CMD_BIND_POWER_DOWN, 0);
-	usleep(500000);
+	POWER_SPEKTRUM(/*LOW*/ 0);
+	HAL::usleep(500000);
+	/*Set UART RX pin to active output mode*/
+	SPEKTRUM_RX_AS_GPIO();
 
-	bind(DSM_CMD_BIND_SET_RX_OUT, 0);
+	/*power up DSM satellite*/
+	POWER_SPEKTRUM(/*HIGH*/ 1);
+	resetFormat();
+	HAL::usleep(72000);
 
-	bind(DSM_CMD_BIND_POWER_UP, 0);
-	usleep(72000);
-
-	bind(DSM_CMD_BIND_SEND_PULSES, pulses);
-	usleep(50000);
-
-	bind(DSM_CMD_BIND_REINIT_UART, 0);
+	/*Pulse RX pin a number of times*/
+	for (int i = 0; i < pulses; i++) {
+		HAL::udelay(120);
+		SPEKTRUM_RX_HIGH(/*LOW*/ 0);
+		HAL::udelay(120);
+		SPEKTRUM_RX_HIGH(/*HIGH*/ 1);
+	}
 }

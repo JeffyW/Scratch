@@ -1,73 +1,35 @@
-#include "dsm.h"
+#include <DSM/dsm.h>
 #include <stdarg.h>
+#include <HAL/HAL.h>
+
+#define BIND_PIN 50
 
 // Serial pin
-#define GPIO_USART1_RX_SPEKTRUM		15 //(GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|GPIO_OUTPUT_SET|GPIO_PORTA|GPIO_PIN10)
+#define GPIO_USART1_RX_SPEKTRUM		15 
 #define GPIO_USART1_RX    (GPIO_INPUT|GPIO_CNF_INFLOAT|GPIO_MODE_INPUT|GPIO_PORTB|GPIO_PIN7)
 // Power pin
-#define GPIO_SPEKTRUM_PWR_EN		48 //(GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|GPIO_OUTPUT_SET|GPIO_PORTC|GPIO_PIN13)
+#define GPIO_SPEKTRUM_PWR_EN		48 
 Pio *rxport = digitalPinToPort(GPIO_USART1_RX_SPEKTRUM);
 uint32_t rxbitmask = digitalPinToBitMask(GPIO_USART1_RX_SPEKTRUM);
 static uint16_t vals[16];
 unsigned long timex;
-//#define usleep(_s)	delayMicroseconds(_s)
 
-static void debug(const char *fmt, ...){
-	char buf[128]; // resulting string limited to 128 chars
-	va_list args;
-	va_start(args, fmt);
-	vsnprintf(buf, 128, fmt, args);
-	va_end(args);
-	Serial.println(buf);
-}
-
-namespace AP_HAL {
-
-	uint32_t micros()
-	{
-		// Use function provided by libmaple.
-		return ::micros();
-	}
-
-	uint32_t millis()
-	{
-		// Use function provided by libmaple.
-		return ::millis();
-	}
-
-	uint64_t millis64()
-	{
-		return millis();
-	}
-
-	uint64_t micros64()
-	{
-		// this is slow, but solves the problem with logging uint64_t timestamps
-		uint64_t ret = millis();
-		ret *= 1000ULL;
-		ret += micros() % 1000;
-		return ret;
-	}
-
-}
+#define debug(fmt, args...) HAL::debug(fmt, ##args)
 
 static HAL::HAL hal = HAL::HAL(
 	&Serial,
 	&Serial3,
-	15,
-	48);
+	15,//(GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|GPIO_OUTPUT_SET|GPIO_PORTA|GPIO_PIN10)
+	48);//(GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|GPIO_OUTPUT_SET|GPIO_PORTC|GPIO_PIN13)
 
-static DSM dsm = DSM(&hal);
+static DSM dsm = DSM(
+	&hal);
 
 void setup()
 {
-	Serial.begin(115200);
-	pinMode(GPIO_SPEKTRUM_PWR_EN, OUTPUT);
-
-	dsm.bind(7);
-
-	digitalWrite(GPIO_SPEKTRUM_PWR_EN, HIGH);
-	Serial3.begin(115200); //Uses Serial3 for input as default
+	hal.init();
+	pinMode(BIND_PIN, INPUT_PULLUP);
+	dsm.init(digitalRead(BIND_PIN) == LOW);
 }
 
 void loop()
@@ -75,28 +37,29 @@ void loop()
 	uint16_t *values = vals;
 	uint16_t numChannels = 16;
 
-	while (Serial3.available() >= 16)
+	while (hal.dsm_receiver->available() >= 16)
 	{
 		uint8_t i;
 		uint8_t dsm_frame[16];
 		for (i = 0; i < 16; i++)
 		{
-			dsm_frame[i] = Serial3.read();
+			dsm_frame[i] = hal.dsm_receiver->read();
 		}
 
 		uint16_t num_values = 0;
-		if (!dsm_decode(AP_HAL::micros64(), dsm_frame, values, &num_values, numChannels)) {
-			debug("WTF");
-			//debug("DSM dsm_frame %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x",
-			//	dsm_frame[0], dsm_frame[1], dsm_frame[2], dsm_frame[3], dsm_frame[4], dsm_frame[5], dsm_frame[6], dsm_frame[7],
-			//	dsm_frame[8], dsm_frame[9], dsm_frame[10], dsm_frame[11], dsm_frame[12], dsm_frame[13], dsm_frame[14], dsm_frame[15]);
+		if (!dsm.dsm_decode(dsm_frame, values, &num_values, numChannels)) {
+			//debug("WTF");
+			//debug("Invalid(%u):	%02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x", hal.dsm_receiver->available(), dsm_frame[0], dsm_frame[1], dsm_frame[2], dsm_frame[3], dsm_frame[4], dsm_frame[5], dsm_frame[6], dsm_frame[7], dsm_frame[8], dsm_frame[9], dsm_frame[10], dsm_frame[11], dsm_frame[12], dsm_frame[13], dsm_frame[14], dsm_frame[15]);
+			//debug("Invalid");
 		}
-
-		debug("%u	%u	%u	%u	%u	%u	%u	%u	%u", values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8]);
+		else
+		{
+			debug("Values:	%u	%u	%u	%u	%u	%u	%u	%u	%u", values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8]);
+			//debug("Valid:	%02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x", dsm_frame[0], dsm_frame[1], dsm_frame[2], dsm_frame[3], dsm_frame[4], dsm_frame[5], dsm_frame[6], dsm_frame[7], dsm_frame[8], dsm_frame[9], dsm_frame[10], dsm_frame[11], dsm_frame[12], dsm_frame[13], dsm_frame[14], dsm_frame[15]);
+			//debug("Valid");
+		}
 	}
 }
-
-
 
 //
 //void SpektrumBind(void)
@@ -187,16 +150,6 @@ void loop()
 //		//DDRD |= (1 << DDD5); // Rx as output
 //		pinMode(GPIO_USART1_RX_SPEKTRUM, OUTPUT);
 //		delay(90); // Delay after Rx startup
-//
-//		// === Update 2011-08-18 ===
-//		// Bind mode data gathered from Spektrum DX8
-//		// 2 low pulses: DSM2 1024/22ms (this works with Doug Weibel's PPM Encoder firmware)
-//		// 3 low pulses: no result
-//		// 4 low pulses: DSM2 2048/11ms
-//		// 5 low pulses: no result
-//		// 6 low pulses: DSMX 22ms
-//		// 7 low pulses: no result
-//		// 8 low pulses: DSMX 11ms
 //
 //		int numPulses = 2;
 //		for (int i = 0; i < numPulses; i++)
