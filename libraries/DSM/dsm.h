@@ -1,24 +1,18 @@
 #ifndef _DSM
 #define _DSM
 
-#include <Print.h>
-#include <USARTClass.h>
-#include <HAL/HAL.h>
+#include <HAL/DigitalPin.h>
+#include <HAL/UartRx.h>
 
 #define DSM_FRAME_SIZE		16		/**< DSM frame size in bytes*/
-
-enum DSM_CMD {							/* DSM bind states */
-	DSM_CMD_BIND_POWER_DOWN = 0,
-	DSM_CMD_BIND_POWER_UP,
-	DSM_CMD_BIND_SET_RX_OUT,
-	DSM_CMD_BIND_SEND_PULSES
-};
 
 class DSM
 {
 public:
-	DSM(HAL::HAL* _hal)
-		: hal(_hal)
+	DSM(HAL::DigitalPin* receiverPower, HAL::UartRx* receiverRx)
+		:
+		_receiverPower(receiverPower),
+		_receiverRx(receiverRx)
 	{}
 
 	void init(bool bind);
@@ -28,11 +22,25 @@ public:
 		uint16_t *num_values,
 		uint16_t max_values);
 
+	void loop();
 
 private:
-	HAL::HAL* hal;
+	HAL::DigitalPin* _receiverPower;
+	HAL::UartRx* _receiverRx;
 
+	uint32_t cs10; // Bitmask of which channels were decoded using a 10 shift
+	uint32_t cs11; // Bitmask of which channels were decoded using an 11 shift
+	unsigned samples; // Number of frames sampled for format guessing
+	bool binding = false; // Whether we are currenly binding
+	uint32_t last_frame_time; // Micros timestamp since the start of the last time any data was received
+	unsigned dsm_channel_shift; /**< Channel resolution, 0=unknown, 1=10 bit, 2=11 bit */
+
+	// Initiate the binding process
 	void bind(uint8_t pulses);
+
+	bool dsm_guess_format(const uint8_t dsm_frame[DSM_FRAME_SIZE]);
+
+	void resetFormat();
 };
 
 #endif

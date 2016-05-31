@@ -36,12 +36,30 @@
     <ClInclude Include="HAL\HAL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="HAL\DigitalPin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HAL_Arduino\DigitalPin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HAL\UartRx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HAL_Arduino\UartRx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DSM\dsm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="HAL\HAL.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HAL_Arduino\DigitalPin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HAL_Arduino\UartRx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -2,24 +2,26 @@
 #include <AP_Common/AP_Common.h>
 #include <wiring_digital.h>
 #include "dsm.h"
+#include <HAL/HAL.h>
 
+#define PULSE_DELAY 116
 #define DSM2_22ms_BIND_PULSES 3	/* DSM_BIND_START ioctl parameter, pulses required to start dsm2 pairing */
 #define DSM2_11ms_BIND_PULSES 3	/* DSM_BIND_START ioctl parameter, pulses required to start dsm2 pairing */
 #define DSMX_22ms_BIND_PULSES 7	/* DSM_BIND_START ioctl parameter, pulses required to start dsmx pairing */
 #define DSMX_11ms_BIND_PULSES 9	/* DSM_BIND_START ioctl parameter, pulses required to start 8 or more channel dsmx pairing */
 
-#define SPEKTRUM_RX_AS_UART()	pinMode(hal->dsm_receiver_pin, INPUT); hal->dsm_receiver->begin(115200) //stm32_configgpio(GPIO_USART1_RX)
-#define SPEKTRUM_RX_AS_GPIO()	pinMode(hal->dsm_receiver_pin, OUTPUT) //stm32_configgpio(GPIO_USART1_RX_SPEKTRUM)
-#define SPEKTRUM_RX_HIGH(_s)	digitalWrite(hal->dsm_receiver_pin, (_s)) //stm32_gpiowrite(GPIO_USART1_RX_SPEKTRUM, (_s))
-#define POWER_SPEKTRUM(_s)		digitalWrite(hal->dsm_receiver_power_pin, (_s)) //stm32_gpiowrite(GPIO_SPEKTRUM_PWR_EN, (_s))
+#define SPEKTRUM_RX_AS_UART()	_receiverRx->SetMode(INPUT); _receiverRx->Begin(115200) //stm32_configgpio(GPIO_USART1_RX)
+#define RX_Clear()	_receiverRx->Clear()
+#define SPEKTRUM_RX_AS_GPIO()	_receiverRx->SetMode(OUTPUT) //stm32_configgpio(GPIO_USART1_RX_SPEKTRUM)
+#define RX_Write(_s)	_receiverRx->Write(_s) //stm32_gpiowrite(GPIO_USART1_RX_SPEKTRUM, (_s))
+#define POWER(_s)		_receiverPower->Write(_s) //stm32_gpiowrite(GPIO_SPEKTRUM_PWR_EN, (_s))
 
-static uint64_t dsm_last_frame_time;		/**< Timestamp for start of last dsm frame */
-static unsigned dsm_channel_shift;			/**< Channel resolution, 0=unknown, 1=10 bit, 2=11 bit */
+#define IsConnected (dsm_channel_shift != 0)
 
 #ifdef DEBUG
+#define debug(fmt, args...) HAL::debug(fmt, ##args)
 #else
 #define debug(fmt, args...)
-#define debug(fmt, args...) HAL::debug(fmt, ##args)
 #endif
 
 /**
@@ -63,11 +65,7 @@ static bool dsm_decode_channel(uint16_t raw, unsigned shift, unsigned *channel, 
 	return true;
 }
 
-static uint32_t	cs10;
-static uint32_t	cs11;
-static unsigned samples;
-
-static void resetFormat()
+void DSM::resetFormat()
 {
 	cs10 = 0;
 	cs11 = 0;
@@ -80,8 +78,9 @@ static void resetFormat()
 *
 * @param[in] reset true=reset the 10/11 bit state to unknown
 */
-static bool dsm_guess_format(const uint8_t dsm_frame[DSM_FRAME_SIZE])
+bool DSM::dsm_guess_format(const uint8_t dsm_frame[DSM_FRAME_SIZE])
 {
+	binding = false;
 	debug("Frame:	%02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x", dsm_frame[0], dsm_frame[1], dsm_frame[2], dsm_frame[3], dsm_frame[4], dsm_frame[5], dsm_frame[6], dsm_frame[7], dsm_frame[8], dsm_frame[9], dsm_frame[10], dsm_frame[11], dsm_frame[12], dsm_frame[13], dsm_frame[14], dsm_frame[15]);
 
 	/* The first two bytes are some form of a header, but not channel information, thus starting at 1. */
@@ -162,31 +161,17 @@ static bool dsm_guess_format(const uint8_t dsm_frame[DSM_FRAME_SIZE])
 */
 bool DSM::dsm_decode(const uint8_t dsm_frame[DSM_FRAME_SIZE], uint16_t *values, uint16_t *num_values, uint16_t max_values)
 {
-	uint64_t frame_time = HAL::micros64();
-
-	/*
-	* If we have lost signal for at least a second, reset the
-	* format guessing heuristic.
-	*/
-	if (((frame_time - dsm_last_frame_time) > 1000000) && (dsm_channel_shift != 0))
-		resetFormat();
-
-	/* we have received something we think is a dsm_frame */
-	dsm_last_frame_time = frame_time;
-
 	/* if we don't know the dsm_frame format, update the guessing state machine */
 	if (dsm_channel_shift == 0)
 	{
 		if (!dsm_guess_format(dsm_frame))
 		{
 			// Failed to guess format, clear the buffer and start over.
-			// This is overkill, but the only way I can see to clear the buffer.
-			SPEKTRUM_RX_AS_UART();
+			RX_Clear();
 			return false;
 		}
 		return false;
 	}
-
 
 	/*
 	* The encoding of the first two bytes is uncertain, so we're
@@ -287,44 +272,115 @@ bool DSM::dsm_decode(const uint8_t dsm_frame[DSM_FRAME_SIZE], uint16_t *values, 
 
 void DSM::init(bool shouldBind)
 {
-	pinMode(hal->dsm_receiver_power_pin, 0x1);
+	_receiverPower->SetMode(OUTPUT);
 
 	if (shouldBind)
 	{
 		bind(DSMX_11ms_BIND_PULSES);
+
+		// Add a wait to see if we're connected, else retry?
 	}
 	else
 	{
+		SPEKTRUM_RX_AS_UART();
+		POWER(/*HIGH*/ 1);
 		// Need to find a way to detect that we're in binding mode, then recycle the RX.
 		// But if we're not in binding mode, I don't want to lose the cycles.
 		//if (false)
 		//{
-		//	POWER_SPEKTRUM(/*LOW*/ 0);
+		//	POWER(/*LOW*/ 0);
 		//	HAL::usleep(50000);
 		//}
 	}
-
-	SPEKTRUM_RX_AS_UART();
-	POWER_SPEKTRUM(/*HIGH*/ 1);
 }
 
 void DSM::bind(uint8_t pulses)
 {
-	POWER_SPEKTRUM(/*LOW*/ 0);
+	debug("Binding");
+	binding = true;
+	POWER(/*LOW*/ 0);
 	HAL::usleep(500000);
 	/*Set UART RX pin to active output mode*/
+	resetFormat();
 	SPEKTRUM_RX_AS_GPIO();
 
 	/*power up DSM satellite*/
-	POWER_SPEKTRUM(/*HIGH*/ 1);
-	resetFormat();
+	POWER(/*HIGH*/ 1);
 	HAL::usleep(72000);
 
 	/*Pulse RX pin a number of times*/
 	for (int i = 0; i < pulses; i++) {
-		HAL::udelay(120);
-		SPEKTRUM_RX_HIGH(/*LOW*/ 0);
-		HAL::udelay(120);
-		SPEKTRUM_RX_HIGH(/*HIGH*/ 1);
+		HAL::udelay(PULSE_DELAY);
+		RX_Write(/*LOW*/ 0);
+		HAL::udelay(PULSE_DELAY);
+		RX_Write(/*HIGH*/ 1);
+	}
+
+	SPEKTRUM_RX_AS_UART();
+}
+
+static uint16_t vals[16];
+
+void DSM::loop()
+{
+	uint16_t *values = vals;
+	uint16_t numChannels = 16;
+
+	uint32_t frame_time = HAL::micros();
+	if (_receiverRx->Available() >= 16)
+	{
+		last_frame_time = frame_time;
+
+		uint8_t i;
+		uint8_t dsm_frame[16];
+		for (i = 0; i < 16; i++)
+		{
+			dsm_frame[i] = _receiverRx->Read();
+		}
+
+		uint16_t num_values = 0;
+		if (!dsm_decode(dsm_frame, values, &num_values, numChannels)) {
+			//debug("WTF");
+			//debug("Invalid(%u):	%02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x", hal.dsm_receiver->available(), dsm_frame[0], dsm_frame[1], dsm_frame[2], dsm_frame[3], dsm_frame[4], dsm_frame[5], dsm_frame[6], dsm_frame[7], dsm_frame[8], dsm_frame[9], dsm_frame[10], dsm_frame[11], dsm_frame[12], dsm_frame[13], dsm_frame[14], dsm_frame[15]);
+			//debug("Invalid");
+		}
+		else
+		{
+			//debug("Values:	%u	%u	%u	%u	%u	%u	%u	%u	%u", values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8]);
+			//debug("Valid:	%02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x", dsm_frame[0], dsm_frame[1], dsm_frame[2], dsm_frame[3], dsm_frame[4], dsm_frame[5], dsm_frame[6], dsm_frame[7], dsm_frame[8], dsm_frame[9], dsm_frame[10], dsm_frame[11], dsm_frame[12], dsm_frame[13], dsm_frame[14], dsm_frame[15]);
+			//debug("Valid");
+		}
+	}
+	else
+	{
+		uint32_t sinceLastFrame = (frame_time - last_frame_time);
+
+
+		/*
+		* If we have lost signal for at least a second, reset the
+		* format guessing heuristic.
+		*/
+		if ((sinceLastFrame > 1000000) && IsConnected)
+		{
+			debug("Resetting guessing");
+			resetFormat();
+		}
+
+		// We should calculate this from binding, but for now, assume 11ms
+		const uint32_t timeBetweenFrames = 11 * 1000;
+
+		// How many missed frames before we report it?
+		const uint32_t timeout = timeBetweenFrames * 3;
+		if ((sinceLastFrame > timeout) && IsConnected)
+		{
+			debug("Disconnected: %u;", sinceLastFrame);
+		}
+
+		if (binding)
+		{
+			// Add a timeout here to re-initiate binding
+			debug("Still binding");
+		}
 	}
 }
+

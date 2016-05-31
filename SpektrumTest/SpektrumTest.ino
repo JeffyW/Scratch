@@ -1,6 +1,7 @@
-#include <DSM/dsm.h>
-#include <stdarg.h>
+#include <HAL_Arduino/UartRx.h>
+#include <HAL_Arduino/DigitalPin.h>
 #include <HAL/HAL.h>
+#include <DSM/dsm.h>
 
 #define BIND_PIN 50
 
@@ -11,10 +12,12 @@
 #define GPIO_SPEKTRUM_PWR_EN		48 
 Pio *rxport = digitalPinToPort(GPIO_USART1_RX_SPEKTRUM);
 uint32_t rxbitmask = digitalPinToBitMask(GPIO_USART1_RX_SPEKTRUM);
-static uint16_t vals[16];
 unsigned long timex;
 
 #define debug(fmt, args...) HAL::debug(fmt, ##args)
+
+static HAL_Arduino::UartRx _receiverRx = HAL_Arduino::UartRx(15, &Serial3);
+static HAL_Arduino::DigitalPin _receiverPower = HAL_Arduino::DigitalPin(48);
 
 static HAL::HAL hal = HAL::HAL(
 	&Serial,
@@ -23,7 +26,8 @@ static HAL::HAL hal = HAL::HAL(
 	48);//(GPIO_OUTPUT|GPIO_CNF_OUTPP|GPIO_MODE_50MHz|GPIO_OUTPUT_SET|GPIO_PORTC|GPIO_PIN13)
 
 static DSM dsm = DSM(
-	&hal);
+	&_receiverPower,
+	&_receiverRx);
 
 void setup()
 {
@@ -34,31 +38,8 @@ void setup()
 
 void loop()
 {
-	uint16_t *values = vals;
-	uint16_t numChannels = 16;
-
-	while (hal.dsm_receiver->available() >= 16)
-	{
-		uint8_t i;
-		uint8_t dsm_frame[16];
-		for (i = 0; i < 16; i++)
-		{
-			dsm_frame[i] = hal.dsm_receiver->read();
-		}
-
-		uint16_t num_values = 0;
-		if (!dsm.dsm_decode(dsm_frame, values, &num_values, numChannels)) {
-			//debug("WTF");
-			//debug("Invalid(%u):	%02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x", hal.dsm_receiver->available(), dsm_frame[0], dsm_frame[1], dsm_frame[2], dsm_frame[3], dsm_frame[4], dsm_frame[5], dsm_frame[6], dsm_frame[7], dsm_frame[8], dsm_frame[9], dsm_frame[10], dsm_frame[11], dsm_frame[12], dsm_frame[13], dsm_frame[14], dsm_frame[15]);
-			//debug("Invalid");
-		}
-		else
-		{
-			debug("Values:	%u	%u	%u	%u	%u	%u	%u	%u	%u", values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8]);
-			//debug("Valid:	%02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x", dsm_frame[0], dsm_frame[1], dsm_frame[2], dsm_frame[3], dsm_frame[4], dsm_frame[5], dsm_frame[6], dsm_frame[7], dsm_frame[8], dsm_frame[9], dsm_frame[10], dsm_frame[11], dsm_frame[12], dsm_frame[13], dsm_frame[14], dsm_frame[15]);
-			//debug("Valid");
-		}
-	}
+	//debug("Main: %llu", HAL::micros64());
+	dsm.loop();
 }
 
 //
