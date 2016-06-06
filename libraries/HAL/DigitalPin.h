@@ -12,6 +12,7 @@ namespace HAL
 
 		virtual void SetMode(uint32_t mode) = 0;
 		virtual void Write(uint32_t value) = 0;
+		virtual uint32_t Read() = 0;
 	};
 }
 

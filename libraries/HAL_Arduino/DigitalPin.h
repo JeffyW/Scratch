@@ -16,6 +16,7 @@ namespace HAL_Arduino
 
 		void SetMode(uint32_t mode);
 		void Write(uint32_t value);
+		uint32_t Read();
 
 	protected:
 		uint32_t _pin;

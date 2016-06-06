@@ -384,3 +384,65 @@ void DSM::loop()
 	}
 }
 
+//
+//void SpektrumBind(void)
+//{
+//	// This code is using Serial as the RX input.
+//	// This maps to pin 0, aka PORTD0
+//
+//	unsigned char connected = 0;
+//
+//	// Connect the power for the Rx to RX_powerpin this is brought
+//	// high to turn on the Rx.
+//	delay(5);  // Delay added to work with Orange Receivers
+//	digitalWrite(GPIO_SPEKTRUM_PWR_EN, HIGH);
+//
+//
+//
+//	//UCSR0B &= ~(1 << RXCIE0); // disable Rx interrupt
+//	//UCSR0B &= ~(1 << RXEN0); // disable USART1 Rx
+//	rxport->PIO_IDR = rxbitmask; // Disable RX interrupt
+//	rxport->PIO_PDR = rxbitmask; // Disable GPIO
+//
+//	//PORTD &= ~(1 << PORTD0); // disable pull-up
+//	rxport->PIO_CODR = rxbitmask; // disable pull-up
+//
+//	while (timex <= 10000) // Wait 10 seconds for spektrum sat connection
+//	{
+//		timex = millis();
+//		if (rxport->PIO_PDSR & rxbitmask)
+//			//if (PIND & (1 << PORTD5))
+//		{
+//			connected = 1;
+//			break;
+//		}
+//	}
+//
+//	if (connected)
+//	{
+//		debug("Connected! Binding now!");
+//
+//		//DDRD |= (1 << DDD5); // Rx as output
+//		pinMode(GPIO_USART1_RX_SPEKTRUM, OUTPUT);
+//		delay(90); // Delay after Rx startup
+//
+//		int numPulses = 2;
+//		for (int i = 0; i < numPulses; i++)
+//		{
+//			//PORTD &= ~(1 << PORTD5);
+//			rxport->PIO_CODR = rxbitmask; // low
+//			delayMicroseconds(116);
+//			//PORTD |= (1 << PORTD5);
+//			rxport->PIO_SODR = rxbitmask; // high
+//			delayMicroseconds(116);
+//		}
+//	}
+//	else
+//	{
+//		Serial.println("Timeout.");
+//	}
+//
+//	//DDRD &= ~(1 << DDD5); // Rx as input
+//	//PORTD &= ~(1 << PORTD5); // Low
+//	pinMode(GPIO_USART1_RX_SPEKTRUM, INPUT);
+//}

@@ -24,6 +24,7 @@ namespace HAL_Arduino
 
 		void SetMode(uint32_t mode) { HAL_Arduino::DigitalPin::SetMode(mode); }
 		void Write(uint32_t value) { HAL_Arduino::DigitalPin::Write(value); }
+		//uint32_t Read() { return HAL_Arduino::DigitalPin::Read(); }
 
 	private:
 		UARTClass* _uart;
