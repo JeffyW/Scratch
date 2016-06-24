@@ -40,8 +40,21 @@ namespace HAL
 		return ret;
 	}
 
+	void debug(uint16_t source, uint16_t level, const char *fmt, ...)
+	{
+		if ((source & SourceMask) && (level & LevelMask))
+		{
+			char buf[128]; // resulting string limited to 128 chars
+			va_list args;
+			va_start(args, fmt);
+			vsnprintf(buf, 128, fmt, args);
+			va_end(args);
+			Serial.println(buf);
+		}
+	}
 
-	void debug(const char *fmt, ...) {
+	void debug(const char *fmt, ...)
+	{
 		char buf[128]; // resulting string limited to 128 chars
 		va_list args;
 		va_start(args, fmt);
