@@ -6,7 +6,7 @@
 
 namespace HAL
 {
-	class UartRx : public DigitalPin
+	class UartRx : public virtual DigitalPin
 	{
 	public:
 		virtual ~UartRx() {}

@@ -12,7 +12,7 @@ namespace HAL_Arduino
 	public:
 		UartRx(uint32_t digitalPin, UARTClass* uart)
 			:
-			HAL_Arduino::DigitalPin::DigitalPin(digitalPin),
+			DigitalPin(digitalPin),
 			_uart(uart)
 		{
 		}
@@ -21,10 +21,6 @@ namespace HAL_Arduino
 		uint32_t Read();
 		void Begin(uint32_t baud);
 		void Clear();
-
-		void SetMode(uint32_t mode) { HAL_Arduino::DigitalPin::SetMode(mode); }
-		void Write(uint32_t value) { HAL_Arduino::DigitalPin::Write(value); }
-		//uint32_t Read() { return HAL_Arduino::DigitalPin::Read(); }
 
 	private:
 		UARTClass* _uart;
