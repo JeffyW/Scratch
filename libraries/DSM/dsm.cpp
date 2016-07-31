@@ -22,6 +22,7 @@
 #define debug(fmt, args...) HAL::debug(fmt, ##args)
 #else
 #define debug(fmt, args...)
+#define debug(fmt, args...) HAL::debug(fmt, ##args)
 #endif
 
 /**
@@ -346,7 +347,7 @@ void DSM::loop()
 		}
 		else
 		{
-			//debug("Values:	%u	%u	%u	%u	%u	%u	%u	%u	%u", values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8]);
+			debug("Values:	%u	%u	%u	%u	%u	%u	%u	%u	%u", values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8]);
 			//debug("Valid:	%02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x %02x%02x", dsm_frame[0], dsm_frame[1], dsm_frame[2], dsm_frame[3], dsm_frame[4], dsm_frame[5], dsm_frame[6], dsm_frame[7], dsm_frame[8], dsm_frame[9], dsm_frame[10], dsm_frame[11], dsm_frame[12], dsm_frame[13], dsm_frame[14], dsm_frame[15]);
 			//debug("Valid");
 		}

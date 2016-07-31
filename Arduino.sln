@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libraries", "libraries\libraries.vcxproj", "{C5F80730-F44F-4478-BDAE-6634EFC2CA88}"
 EndProject
@@ -11,6 +11,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpektrumTest", "SpektrumTes
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Scratch", "Scratch\Scratch.vcxproj", "{8A97011D-93DA-4EFF-9D03-73EA074346F5}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GpsTest", "GpsTest\GpsTest.vcxproj", "{AF176656-AAB5-4620-AA47-997D50DB7F3B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImuTest", "ImuTest\ImuTest.vcxproj", "{11338711-2221-40E7-800A-E5686C91BA03}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -28,6 +32,14 @@ Global
 		{8A97011D-93DA-4EFF-9D03-73EA074346F5}.Debug|Win32.Build.0 = Debug|Win32
 		{8A97011D-93DA-4EFF-9D03-73EA074346F5}.Release|Win32.ActiveCfg = Release|Win32
 		{8A97011D-93DA-4EFF-9D03-73EA074346F5}.Release|Win32.Build.0 = Release|Win32
+		{AF176656-AAB5-4620-AA47-997D50DB7F3B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AF176656-AAB5-4620-AA47-997D50DB7F3B}.Debug|Win32.Build.0 = Debug|Win32
+		{AF176656-AAB5-4620-AA47-997D50DB7F3B}.Release|Win32.ActiveCfg = Release|Win32
+		{AF176656-AAB5-4620-AA47-997D50DB7F3B}.Release|Win32.Build.0 = Release|Win32
+		{11338711-2221-40E7-800A-E5686C91BA03}.Debug|Win32.ActiveCfg = Debug|Win32
+		{11338711-2221-40E7-800A-E5686C91BA03}.Debug|Win32.Build.0 = Debug|Win32
+		{11338711-2221-40E7-800A-E5686C91BA03}.Release|Win32.ActiveCfg = Release|Win32
+		{11338711-2221-40E7-800A-E5686C91BA03}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
