@@ -7,3 +7,6 @@
 [submodule "libraries/Adafruit_LSM303DLHC"]
 	path = libraries/Adafruit_LSM303DLHC
 	url = https://github.com/JeffyW/Adafruit_LSM303DLHC/
+[submodule "libraries/libraries\\I2C-Master-Library"]
+	path = libraries/libraries\\I2C-Master-Library
+	url = https://github.com/JeffyW/I2C-Master-Library/
