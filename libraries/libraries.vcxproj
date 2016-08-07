@@ -63,7 +63,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Program Files (x86)\Arduino\libraries;C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries;C:\GitHub\Arduino\libraries;C:\Program Files (x86)\Arduino\hardware\arduino\avr\cores\arduino;C:\Program Files (x86)\Arduino\hardware\arduino\avr\variants\mega;C:\GitHub\Arduino\libraries;C:\Program Files (x86)\Arduino\hardware\tools\avr/avr/include/;C:\Program Files (x86)\Arduino\hardware\tools\avr//avr/include/avr/;C:\Program Files (x86)\Arduino\hardware\tools\avr/lib\gcc\avr\4.8.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\GitHub\Arduino\libraries\Adafruit_BMP085_Unified;C:\GitHub\Arduino\libraries\Adafruit_BMP085_Unified\utility;C:\GitHub\Arduino\libraries\Adafruit_Sensors;C:\GitHub\Arduino\libraries\Adafruit_Sensors\utility;C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\src;C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\src\utility;C:\Program Files (x86)\Arduino\libraries;C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries;C:\GitHub\Arduino\libraries;C:\Program Files (x86)\Arduino\hardware\arduino\avr\cores\arduino;C:\Program Files (x86)\Arduino\hardware\arduino\avr\variants\mega;C:\GitHub\Arduino\libraries;C:\Program Files (x86)\Arduino\hardware\tools\avr/avr/include/;C:\Program Files (x86)\Arduino\hardware\tools\avr//avr/include/avr/;C:\Program Files (x86)\Arduino\hardware\tools\avr/lib\gcc\avr\4.8.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>C:\GitHub\Arduino\libraries\__vm\.libraries.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <PreprocessorDefinitions>__AVR_ATmega2560__;VSMICRO;CONFIG_HAL_BOARD=10;F_CPU=16000000L;ARDUINO=106010;ARDUINO_AVR_MEGA2560;ARDUINO_ARCH_AVR;__cplusplus=201103L;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -78,12 +78,13 @@
     <None Include="libraries.ino">
       <FileType>CppCode</FileType>
     </None>
+    <None Include="Adafruit_BMP085_Unified\examples\nonblocking\nonblocking.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Adafruit_BMP085_Unified\Adafruit_BMP085_U.h" />
     <ClInclude Include="Adafruit_L3GD20_U\Adafruit_L3GD20_U.h" />
     <ClInclude Include="Adafruit_LSM303DLHC\Adafruit_LSM303_U.h" />
-    <ClInclude Include="Adafruit_Sensors\Adafruit_GPS.h" />
+    <ClInclude Include="Adafruit_GPS.h" />
     <ClInclude Include="Adafruit_Sensors\Adafruit_Sensor.h" />
     <ClInclude Include="AP_HAL\AP_HAL_Namespace.h" />
     <ClInclude Include="AP_Common\AP_Common.h" />
@@ -93,6 +94,7 @@
     <ClInclude Include="HAL\DigitalPin.h" />
     <ClInclude Include="HAL\HAL.h" />
     <ClInclude Include="HAL_Arduino\UartRx.h" />
+    <ClInclude Include="I2C-Master-Library\I2C.h" />
     <ClInclude Include="utility\functor.h" />
     <ClInclude Include="__vm\.libraries.vsarduino.h" />
   </ItemGroup>
@@ -100,11 +102,12 @@
     <ClCompile Include="Adafruit_BMP085_Unified\Adafruit_BMP085_U.cpp" />
     <ClCompile Include="Adafruit_L3GD20_U\Adafruit_L3GD20_U.cpp" />
     <ClCompile Include="Adafruit_LSM303DLHC\Adafruit_LSM303_U.cpp" />
-    <ClCompile Include="Adafruit_Sensors\Adafruit_GPS.cpp" />
+    <ClCompile Include="Adafruit_GPS.cpp" />
     <ClCompile Include="HAL_Arduino\DigitalPin.cpp" />
     <ClCompile Include="DSM\dsm.cpp" />
     <ClCompile Include="HAL\HAL.cpp" />
     <ClCompile Include="HAL_Arduino\UartRx.cpp" />
+    <ClCompile Include="I2C-Master-Library\I2C.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

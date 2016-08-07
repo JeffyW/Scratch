@@ -85,7 +85,7 @@
   </ImportGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties arduino.build.auto_discover_includes="0" VM_ADDITIONAL_PREPROC="VSMICRO" />
+      <UserProperties arduino.build.auto_discover_includes="0" arduino.upload.port="COM4" VM_ADDITIONAL_PREPROC="VSMICRO" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>
