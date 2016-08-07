@@ -10,3 +10,6 @@
 [submodule "libraries/libraries\\I2C-Master-Library"]
 	path = libraries/libraries\\I2C-Master-Library
 	url = https://github.com/JeffyW/I2C-Master-Library/
+[submodule "libraries/I2C-Master-Library"]
+	path = libraries/I2C-Master-Library
+	url = https://github.com/JeffyW/I2C-Master-Library/
