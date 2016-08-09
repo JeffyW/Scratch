@@ -1,15 +1,20 @@
 [submodule "libraries/Adafruit_BMP085_Unified"]
 	path = libraries/Adafruit_BMP085_Unified
 	url = https://github.com/JeffyW/Adafruit_BMP085_Unified.git
+	branch = Optimized
 [submodule "libraries/Adafruit_L3GD20_U"]
 	path = libraries/Adafruit_L3GD20_U
 	url = https://github.com/JeffyW/Adafruit_L3GD20_U/
+	branch = Optimized
 [submodule "libraries/Adafruit_LSM303DLHC"]
 	path = libraries/Adafruit_LSM303DLHC
 	url = https://github.com/JeffyW/Adafruit_LSM303DLHC/
-[submodule "libraries/libraries\\I2C-Master-Library"]
-	path = libraries/libraries\\I2C-Master-Library
-	url = https://github.com/JeffyW/I2C-Master-Library/
+	branch = Optimized
 [submodule "libraries/I2C-Master-Library"]
+
 	path = libraries/I2C-Master-Library
+
 	url = https://github.com/JeffyW/I2C-Master-Library/
+[submodule "libraries/Adafruit_GPS"]
+	path = libraries/Adafruit_GPS
+	url = https://github.com/adafruit/Adafruit_GPS

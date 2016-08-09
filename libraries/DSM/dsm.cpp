@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <AP_Common/AP_Common.h>
-#include <wiring_digital.h>
 #include "dsm.h"
 #include <HAL/HAL.h>
 
@@ -22,7 +21,7 @@
 #define debug(fmt, args...) HAL::debug(fmt, ##args)
 #else
 #define debug(fmt, args...)
-#define debug(fmt, args...) HAL::debug(fmt, ##args)
+//#define debug(fmt, args...) HAL::debug(fmt, ##args)
 #endif
 
 /**
