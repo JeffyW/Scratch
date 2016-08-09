@@ -1,5 +1,4 @@
 #include "UartRx.h"
-#include <Arduino.h>
 
 namespace HAL_Arduino
 {

@@ -7,15 +7,15 @@ static HAL_Arduino::UartRx _receiverRx = HAL_Arduino::UartRx(15, &Serial3);
 static HAL_Arduino::DigitalPin _receiverPower = HAL_Arduino::DigitalPin(48);
 static HAL_Arduino::DigitalPin _bind = HAL_Arduino::DigitalPin(50);
 
-static HAL::HAL hal = HAL::HAL(&Serial);
-
 static DSM dsm = DSM(
 	&_receiverPower,
 	&_receiverRx);
 
 void setup()
 {
-	hal.init();
+	Serial.begin(250000);
+	Serial.println("Starting up...");
+
 	_bind.SetMode(INPUT_PULLUP);
 	dsm.init(_bind.Read() == LOW);
 }

@@ -58,13 +58,19 @@
     <ClInclude Include="Adafruit_BMP085_Unified\Adafruit_BMP085_U.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Adafruit_GPS.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="__vm\.libraries.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="I2C-Master-Library\I2C.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Adafruit_LSM303DLHC\Adafruit_LSM303_Mag_Unified.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Adafruit_LSM303DLHC\Adafruit_LSM303_Accel_Unified.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Adafruit_GPS\Adafruit_GPS.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -84,16 +90,19 @@
     <ClCompile Include="Adafruit_L3GD20_U\Adafruit_L3GD20_U.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Adafruit_LSM303DLHC\Adafruit_LSM303_U.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Adafruit_BMP085_Unified\Adafruit_BMP085_U.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Adafruit_GPS.cpp">
+    <ClCompile Include="I2C-Master-Library\I2C.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="I2C-Master-Library\I2C.cpp">
+    <ClCompile Include="Adafruit_LSM303DLHC\Adafruit_LSM303_Accel_Unified.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Adafruit_LSM303DLHC\Adafruit_LSM303_Mag_Unified.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Adafruit_GPS\Adafruit_GPS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

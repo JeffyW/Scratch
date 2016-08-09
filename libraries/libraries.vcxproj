@@ -82,9 +82,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Adafruit_BMP085_Unified\Adafruit_BMP085_U.h" />
+    <ClInclude Include="Adafruit_GPS\Adafruit_GPS.h" />
     <ClInclude Include="Adafruit_L3GD20_U\Adafruit_L3GD20_U.h" />
+    <ClInclude Include="Adafruit_LSM303DLHC\Adafruit_LSM303_Accel_Unified.h" />
+    <ClInclude Include="Adafruit_LSM303DLHC\Adafruit_LSM303_Mag_Unified.h" />
     <ClInclude Include="Adafruit_LSM303DLHC\Adafruit_LSM303_U.h" />
-    <ClInclude Include="Adafruit_GPS.h" />
     <ClInclude Include="Adafruit_Sensors\Adafruit_Sensor.h" />
     <ClInclude Include="AP_HAL\AP_HAL_Namespace.h" />
     <ClInclude Include="AP_Common\AP_Common.h" />
@@ -100,9 +102,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Adafruit_BMP085_Unified\Adafruit_BMP085_U.cpp" />
+    <ClCompile Include="Adafruit_GPS\Adafruit_GPS.cpp" />
     <ClCompile Include="Adafruit_L3GD20_U\Adafruit_L3GD20_U.cpp" />
-    <ClCompile Include="Adafruit_LSM303DLHC\Adafruit_LSM303_U.cpp" />
-    <ClCompile Include="Adafruit_GPS.cpp" />
+    <ClCompile Include="Adafruit_LSM303DLHC\Adafruit_LSM303_Accel_Unified.cpp" />
+    <ClCompile Include="Adafruit_LSM303DLHC\Adafruit_LSM303_Mag_Unified.cpp" />
     <ClCompile Include="HAL_Arduino\DigitalPin.cpp" />
     <ClCompile Include="DSM\dsm.cpp" />
     <ClCompile Include="HAL\HAL.cpp" />

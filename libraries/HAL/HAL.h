@@ -13,26 +13,6 @@
 
 namespace HAL
 {
-	class HAL
-	{
-	public:
-		HAL(UARTClass* _console)
-			:
-			console(_console)
-		{
-			//_console->begin(115200);
-		}
-
-		Print* console;
-
-		//void debug();
-
-		void init()
-		{
-			((UARTClass*)console)->begin(250000);
-		}
-	};
-
 	void udelay(uint32_t usec);
 	void usleep(uint32_t usec);
 

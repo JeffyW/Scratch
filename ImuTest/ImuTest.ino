@@ -1,9 +1,9 @@
-#include <Wire.h>
 #include <I2C-Master-Library/I2C.h>
 
 #include <Adafruit_Sensors/Adafruit_Sensor.h>
 #include <Adafruit_L3GD20_U/Adafruit_L3GD20_U.h>
-#include <Adafruit_LSM303DLHC/Adafruit_LSM303_U.h>
+#include <Adafruit_LSM303DLHC/Adafruit_LSM303_Accel_Unified.h>
+#include <Adafruit_LSM303DLHC/Adafruit_LSM303_Mag_Unified.h>
 #include <Adafruit_BMP085_Unified/Adafruit_BMP085_U.h>
 
 static sensors_vec_t vector;
@@ -26,15 +26,15 @@ static float temperature;
 static float pressure;
 
 //#define TRACE
-#define ELAPSED
+//#define ELAPSED
 //#define INTERRUPTS
 #define POLLINGINTERRUPTS
 
 #define GYRO
-//#define ACCEL
-//#define MAG
-//#define TEMP
-//#define PRESSURE
+#define ACCEL
+#define MAG
+#define TEMP
+#define PRESSURE
 
 void GyroDataReady()
 {
@@ -215,7 +215,7 @@ void loop()
 		if (bmp.getTemperature(&temperature))
 		{
 #if defined ELAPSED
-			Serial.print("EDT: "); Serial.print(dr); Serial.print("; ET: "); Serial.println(micros() - start);
+			Serial.print("DTE: "); Serial.print(dr); Serial.print("; TE: "); Serial.println(micros() - start);
 #elif defined TRACE
 			Serial.print("T");
 #else
@@ -243,7 +243,7 @@ void loop()
 		{
 			//pressure = sensors_event.pressure;
 #if defined ELAPSED
-			Serial.print("EDP: "); Serial.print(dr); Serial.print("; EP: "); Serial.println(micros() - start);
+			Serial.print("DPE: "); Serial.print(dr); Serial.print("; PE: "); Serial.println(micros() - start);
 #elif defined TRACE
 			Serial.print("P");
 #else

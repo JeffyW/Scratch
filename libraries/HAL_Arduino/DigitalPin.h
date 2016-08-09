@@ -6,7 +6,7 @@
 
 namespace HAL_Arduino
 {
-	class DigitalPin : public HAL::DigitalPin
+	class DigitalPin : public virtual HAL::DigitalPin
 	{
 	public:
 		DigitalPin(uint32_t pin)
@@ -14,9 +14,9 @@ namespace HAL_Arduino
 		{
 		}
 
-		void SetMode(uint32_t mode);
-		void Write(uint32_t value);
-		uint32_t Read();
+		void SetMode(uint32_t mode) override;
+		void Write(uint32_t value) override;
+		uint32_t Read() override;
 
 	protected:
 		uint32_t _pin;
